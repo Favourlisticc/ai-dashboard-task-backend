@@ -31,14 +31,24 @@ passport.deserializeUser(async (id, done) => {
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: "/api/auth/google/callback",
+  callbackURL: process.env.GOOGLE_CALLBACK_URL || 
+    (process.env.NODE_ENV === 'production' 
+      ? 'https://ai-dashboard-task-backend-1.onrender.com/api/auth/google/callback'
+      : 'http://localhost:3005/api/auth/google/callback'),
   scope: ['profile', 'email']
 }, async (accessToken, refreshToken, profile, done) => {
   try {
+    console.log('🔑 Google OAuth Profile Received:', {
+      id: profile.id,
+      email: profile.emails[0].value,
+      name: profile.displayName
+    });
+
     // Check if user already exists with this Google ID
     let user = await User.findOne({ 'socialAuth.googleId': profile.id });
     
     if (user) {
+      console.log('✅ Existing user found with Google ID:', user.email);
       return done(null, user);
     }
 
@@ -46,6 +56,7 @@ passport.use(new GoogleStrategy({
     user = await User.findOne({ email: profile.emails[0].value });
     
     if (user) {
+      console.log('🔗 Linking Google account to existing user:', user.email);
       // Link Google account to existing user
       user.socialAuth.googleId = profile.id;
       await user.save();
@@ -53,6 +64,7 @@ passport.use(new GoogleStrategy({
     }
 
     // Create new user
+    console.log('👤 Creating new user with Google OAuth');
     user = new User({
       username: profile.displayName.replace(/\s+/g, '').toLowerCase() + Math.random().toString(36).substring(7),
       email: profile.emails[0].value,
@@ -69,8 +81,10 @@ passport.use(new GoogleStrategy({
     });
 
     await user.save();
+    console.log('✅ New user created successfully:', user.email);
     done(null, user);
   } catch (error) {
+    console.error('❌ Error in Google OAuth callback:', error);
     done(error, null);
   }
 }));
