@@ -229,11 +229,17 @@ router.post('/login', validateUser('login'), async (req, res) => {
 // Google Auth
 router.get('/google', (req, res, next) => {
   console.log('🔐 Initiating Google OAuth flow');
-  console.log('📝 Request details:', {
-    method: req.method,
-    url: req.url,
-    query: req.query,
-    headers: req.headers
+  console.log('🌐 Environment:', {
+    NODE_ENV: process.env.NODE_ENV,
+    BACKEND_URL: process.env.BACKEND_URL,
+    GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL
+  });
+  
+  console.log('🔍 Request details:', {
+    protocol: req.protocol,
+    host: req.get('host'),
+    originalUrl: req.originalUrl,
+    secure: req.secure
   });
   
   passport.authenticate('google', { 
