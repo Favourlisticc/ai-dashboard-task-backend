@@ -227,17 +227,47 @@ router.post('/login', validateUser('login'), async (req, res) => {
 });
 
 // Google Auth
-router.get('/google', passport.authenticate('google', { 
-  scope: ['profile', 'email'],
-  session: false 
-}));
+router.get('/google', (req, res, next) => {
+  console.log('🔐 Initiating Google OAuth flow');
+  console.log('📝 Request details:', {
+    method: req.method,
+    url: req.url,
+    query: req.query,
+    headers: req.headers
+  });
+  
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    session: false 
+  })(req, res, next);
+});
 
 router.get('/google/callback', 
-  passport.authenticate('google', { 
-    failureRedirect: `${process.env.FRONTEND_URL}/auth?error=google_auth_failed`,
-    session: false 
-  }),
-  handleSocialAuthSuccess
+  (req, res, next) => {
+    console.log('🔄 Google OAuth callback received');
+    console.log('📝 Callback details:', {
+      method: req.method,
+      url: req.url,
+      query: req.query,
+      hasCode: !!req.query.code,
+      hasError: !!req.query.error,
+      error: req.query.error
+    });
+    
+    passport.authenticate('google', { 
+      failureRedirect: `${process.env.FRONTEND_URL}/auth?error=google_auth_failed`,
+      session: false 
+    })(req, res, next);
+  },
+  (req, res, next) => {
+    console.log('✅ Google OAuth authentication successful');
+    console.log('👤 User authenticated:', {
+      id: req.user?.id,
+      email: req.user?.email,
+      name: req.user?.name
+    });
+    handleSocialAuthSuccess(req, res, next);
+  }
 );
 
 // GitHub Auth

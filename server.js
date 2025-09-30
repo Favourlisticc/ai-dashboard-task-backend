@@ -12,7 +12,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "https://ai-dashboard-180u.onrender.com",
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 
