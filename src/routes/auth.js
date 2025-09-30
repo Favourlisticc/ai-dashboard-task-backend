@@ -47,11 +47,9 @@ const validateUser = (method) => {
   }
 };
 
-// Success response handler for social auth
-// Enhanced success handler
 const handleSocialAuthSuccess = (req, res) => {
   if (!req.user) {
-    return res.redirect(`${process.env.FRONTEND_URL}/auth?error=authentication_failed`);
+    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth?error=authentication_failed`);
   }
 
   const token = generateToken(req.user._id);
@@ -69,12 +67,45 @@ const handleSocialAuthSuccess = (req, res) => {
 
   console.log('Social auth successful for user:', userData);
 
-  // Redirect with token and user data
-  const redirectUrl = new URL(`${process.env.FRONTEND_URL}/auth/success`);
-  redirectUrl.searchParams.set('token', token);
-  redirectUrl.searchParams.set('user', JSON.stringify(userData));
-  
-  res.redirect(redirectUrl.toString());
+  try {
+    // Debug: Check the FRONTEND_URL value
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    console.log('Frontend URL:', frontendUrl);
+    
+    // Validate the URL
+    if (!frontendUrl || typeof frontendUrl !== 'string') {
+      throw new Error(`Invalid FRONTEND_URL: ${frontendUrl}`);
+    }
+
+    // Ensure the URL has protocol
+    let validatedUrl = frontendUrl;
+    if (!validatedUrl.startsWith('http://') && !validatedUrl.startsWith('https://')) {
+      validatedUrl = `https://${validatedUrl}`;
+    }
+
+    // Remove any trailing slashes
+    validatedUrl = validatedUrl.replace(/\/$/, '');
+
+    console.log('Validated Frontend URL:', validatedUrl);
+
+    // Create the redirect URL safely
+    const redirectUrl = new URL('/auth/success', validatedUrl);
+    redirectUrl.searchParams.set('token', token);
+    redirectUrl.searchParams.set('user', JSON.stringify(userData));
+    
+    console.log('Final redirect URL:', redirectUrl.toString());
+    
+    res.redirect(redirectUrl.toString());
+    
+  } catch (error) {
+    console.error('❌ Error creating redirect URL:', error.message);
+    console.error('FRONTEND_URL value:', process.env.FRONTEND_URL);
+    
+    // Fallback redirect
+    const fallbackUrl = `http://localhost:3000/auth/success?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`;
+    console.log('Using fallback URL:', fallbackUrl);
+    res.redirect(fallbackUrl);
+  }
 };
 
 // Error handler for social auth
