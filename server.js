@@ -6,7 +6,7 @@ require('dotenv').config();
 
 
 // Import passport configuration
-require('./config/passport');
+require('./src/config/passport');
 
 const app = express();
 
@@ -36,10 +36,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/free', require('./routes/text'));
-app.use('/api/users/chat', require('./routes/users'));
-app.use('/api/admin', require('./routes/admin'));
+app.use('/api/auth', require('./src/routes/auth'));
+app.use('/api/free', require('./src/routes/text'));
+app.use('/api/users/chat', require('./src/routes/users'));
+app.use('/api/admin', require('./src/routes/admin'));
 
 // Basic route
 app.get('/', (req, res) => {
